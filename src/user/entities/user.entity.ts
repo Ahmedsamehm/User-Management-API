@@ -1,6 +1,7 @@
 import { Exclude } from 'class-transformer';
 import { IsEmail } from 'class-validator';
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { UserRole } from '../enums/userRoles';
 
 @Entity('users')
 export class User {
@@ -17,4 +18,10 @@ export class User {
   @Exclude()
   @Column({ length: 255, nullable: false })
   password: string;
+  @Column({
+    type: 'enum',
+    enum: UserRole,
+    default: UserRole.USER,
+  })
+  role: UserRole;
 }

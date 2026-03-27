@@ -24,10 +24,13 @@ export class UserService {
     if (!user) throw new NotFoundException('User not found');
     return user;
   }
+  async findOneByEmail(email: string): Promise<IUser> {
+    const user = await this.userRepository.findOneBy({ email });
+    if (!user) throw new NotFoundException('email not found');
+    return user;
+  }
   async createUser(userData: CreateUserDto): Promise<IUser> {
-    const emailExist = await this.userRepository.findOneBy({
-      email: userData.email,
-    });
+    const emailExist = await this.findOneByEmail(userData.email);
 
     if (emailExist) {
       throw new ConflictException('Email already exists');
@@ -41,7 +44,7 @@ export class UserService {
     return await this.userRepository.save(user);
   }
 
-  async findALlUsers(): Promise<IUser[]> {
+  async findAllUsers(): Promise<IUser[]> {
     const users = await this.userRepository.find();
 
     return users;

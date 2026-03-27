@@ -27,7 +27,7 @@ export class UserController {
 
   @Get()
   async findAll(): Promise<IUser[]> {
-    return await this.userService.findALlUsers();
+    return await this.userService.findAllUsers();
   }
   @Get(':id')
   async findOne(@Param('id', ParseUUIDPipe) id: string): Promise<IUser> {
