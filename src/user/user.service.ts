@@ -1,26 +1,58 @@
-import { Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { User } from './entities/user.entity';
+import { Repository } from 'typeorm';
 import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
 
+import { CryptoUtil } from 'src/common/utils/crypto.util';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { IUser } from 'src/common/interfaces/user.interfaces';
 @Injectable()
 export class UserService {
-  create(createUserDto: CreateUserDto) {
-    return 'This action adds a new user';
+  constructor(
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
+    private readonly cryptoUtil: CryptoUtil,
+  ) {}
+
+  private async findUser(id: string): Promise<IUser> {
+    const user = await this.userRepository.findOneBy({ id });
+    if (!user) throw new NotFoundException('User not found');
+    return user;
+  }
+  async createUser(userData: CreateUserDto): Promise<IUser> {
+    const emailExist = await this.userRepository.findOneBy({
+      email: userData.email,
+    });
+
+    if (emailExist) {
+      throw new ConflictException('Email already exists');
+    }
+    const hashedPassword = await this.cryptoUtil.hash(userData.password);
+
+    const user = this.userRepository.create({
+      ...userData,
+      password: hashedPassword,
+    });
+    return await this.userRepository.save(user);
   }
 
-  findAll() {
-    return `This action returns all user`;
-  }
+  async findALlUsers(): Promise<IUser[]> {
+    const users = await this.userRepository.find();
 
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
+    return users;
   }
-
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
+  async findUserById(id: string): Promise<IUser> {
+    const user = await this.findUser(id);
+    return user;
   }
-
-  remove(id: number) {
-    return `This action removes a #${id} user`;
+  async updateUser(id: string, userData: UpdateUserDto): Promise<IUser> {
+    const user = await this.findUser(id);
+    const updatedUser = this.userRepository.merge(user, userData);
+    return await this.userRepository.save(updatedUser);
   }
 }
